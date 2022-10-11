@@ -1,11 +1,15 @@
 ﻿using System.Reflection;
 using System.Runtime.InteropServices;
 using Newtonsoft.Json;
+using NLog;
+using NLog.Fluent;
 
 namespace PlexVideoConverter;
 
 public class FileListenerService
 {
+    private static Logger logger = LogManager.GetCurrentClassLogger();
+    
     private static FileListenerService _instance;
     public static FileListenerService Instance => _instance == null ? new FileListenerService() : _instance;
 
@@ -52,6 +56,9 @@ public class FileListenerService
         if (importSettings == null) return;
         foreach (FileListenerSettings setting in importSettings)
         {
+            logger.Info($"Initializing File watcher for Type:" +
+                        $" {setting.FolderType} Path: {setting.FolderPath}");
+            
             DirectoryInfo dir = new DirectoryInfo(setting.FolderPath);
             // Checks whether the folder is enabled and
             // also the directory is a valid location
@@ -75,7 +82,7 @@ public class FileListenerService
                 // Add the systemWatcher to the list
                 Instance._listFileSystemWatcher.Add(fileSWatch);
                 // Record a log entry into Windows Event Log
-                Console.WriteLine(
+                logger.Info(
                     $"Starting to monitor files with extension ({fileSWatch.Filter}) in the folder ({fileSWatch.Path})");
             }
         }
@@ -84,6 +91,11 @@ public class FileListenerService
     public List<FileListenerSettings> GetImportSettings()
     {
         return Instance.FileListenerSettings.FindAll(setting => setting.FolderType == "IMPORT");
+    }
+
+    public FileListenerSettings? GetPostImportSettings()
+    {
+        return Instance.FileListenerSettings.FirstOrDefault(setting => setting.FolderType == "POST-IMPORT");
     }
 
     public List<FileListenerSettings> GetExportSettings()
@@ -104,6 +116,7 @@ public class FileListenerService
         //Lets wait till the file is fully transferred before we do anything
         while (IsFileLocked(fileName))
         {
+            logger.Info($"File: {fileName} is locked, waiting 2 seconds before attempting to queue.");
             Thread.Sleep(2000);
         }
         
