@@ -23,7 +23,6 @@ public class Worker : BackgroundService
             FileListenerService.Instance.StartFileSystemWatcher();
             while (!stoppingToken.IsCancellationRequested)
             {
-                ;
                 await Task.Delay(5000, stoppingToken);
             }
         }

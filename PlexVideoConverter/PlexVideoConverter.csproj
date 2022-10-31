@@ -5,6 +5,7 @@
         <Nullable>enable</Nullable>
         <ImplicitUsings>enable</ImplicitUsings>
         <UserSecretsId>dotnet-PlexVideoConverter-C9E16EC7-28DE-42D8-9AD2-0AF0411D9D83</UserSecretsId>
+        <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
     </PropertyGroup>
 
     <ItemGroup>
@@ -12,7 +13,8 @@
         <PackageReference Include="Microsoft.Extensions.Hosting" Version="6.0.1" />
         <PackageReference Include="Microsoft.Extensions.Hosting.WindowsServices" Version="6.0.0" />
         <PackageReference Include="Newtonsoft.Json" Version="13.0.1" />
-        <PackageReference Include="NLog" Version="5.0.4" />
-        <PackageReference Include="NLog.Extensions.Logging" Version="5.0.4" />
+        <PackageReference Include="NLog" Version="5.0.5" />
+        <PackageReference Include="NLog.Extensions.Logging" Version="5.1.0" />
+        <PackageReference Include="NLog.Web.AspNetCore" Version="5.1.5" />
     </ItemGroup>
 </Project>

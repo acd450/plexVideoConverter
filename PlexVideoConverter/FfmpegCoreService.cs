@@ -58,23 +58,31 @@ public class FfmpegCoreService
     
     public Task ConvertVideoAsync(string inputFile)
     {
-        var outputPath =
-            FileListenerService.Instance.GetExportSettings().FirstOrDefault()?
-                .FolderPath;
+        try
+        {
+            var outputPath =
+                FileListenerService.Instance.GetExportSettings().FirstOrDefault()?
+                    .FolderPath;
 
-        var outputFileName = inputFile.Substring(inputFile.LastIndexOf("\\", StringComparison.Ordinal),
-                inputFile.Length - inputFile.LastIndexOf("\\", StringComparison.Ordinal))
-            .Replace(".mp4", ".mkv");
-        
-        logger.Info($"Converting File: {inputFile}");
-        logger.Info($"Output File: {outputPath + outputFileName}");
-        
-        return FFMpegArguments.FromFileInput(inputFile)
-            .OutputToFile(outputPath + outputFileName, false, options => options
-                .WithVideoCodec(VideoCodec.LibX265)
-                .WithConstantRateFactor(24)
-                .WithFastStart())
-            .ProcessAsynchronously();
+            var outputFileName = inputFile.Substring(inputFile.LastIndexOf("\\", StringComparison.Ordinal),
+                    inputFile.Length - inputFile.LastIndexOf("\\", StringComparison.Ordinal))
+                .Replace(".mp4", ".mkv");
+
+            logger.Info($"Converting File: {inputFile}");
+            logger.Info($"Output File: {outputPath + outputFileName}");
+
+            return FFMpegArguments.FromFileInput(inputFile)
+                .OutputToFile(outputPath + outputFileName, false, options => options
+                    .WithVideoCodec(VideoCodec.LibX265)
+                    .WithConstantRateFactor(24)
+                    .WithFastStart())
+                .ProcessAsynchronously();
+        }
+        catch (Exception ex)
+        {
+            logger.Error("Error during video conversion. " + ex.Message, ex);
+            return Task.CompletedTask;
+        }
     }
 
     /// <summary>
@@ -90,8 +98,41 @@ public class FfmpegCoreService
             FileListenerService.Instance.GetPostImportSettings()?
                 .FolderPath;
         
+        CalculateConversionStats(inputFilePath);
+        
         logger.Info($"Finished converting video, moving to: {completedPath + fileName}");
         
         File.Move(inputFilePath, completedPath + fileName);
+    }
+
+    private void CalculateConversionStats(string inputFilePath)
+    {
+        var outputPath =
+            FileListenerService.Instance.GetExportSettings().FirstOrDefault()?
+                .FolderPath;
+
+        var outputFileName = inputFilePath.Substring(inputFilePath.LastIndexOf("\\", StringComparison.Ordinal),
+                inputFilePath.Length - inputFilePath.LastIndexOf("\\", StringComparison.Ordinal))
+            .Replace(".mp4", ".mkv");
+
+        var fiInput = new FileInfo(inputFilePath);
+        var fiOutput = new FileInfo(outputPath + outputFileName);
+
+        if (!fiInput.Exists)
+        {
+            logger.Error("Cannot find Input file for final stats. File Path: " + inputFilePath);
+            return;
+        } if (!fiOutput.Exists)
+        {
+            logger.Error("Cannot find Output file for final stats. File Path: " + outputPath + outputFileName);
+            return;
+        }
+
+        var inputFileSize = fiInput.Length >> 20;
+        var outputFileSize = fiOutput.Length >> 20;
+        var savingsPercent = ((double)inputFileSize - outputFileSize) / inputFileSize * 100;
+        logger.Info("Input File Size: " + inputFileSize + " MB");
+        logger.Info("Output File Save: " + outputFileSize + " MB");
+        logger.Info("Total conversion savings: " + Math.Floor(savingsPercent) + "%");
     }
 }

@@ -27,7 +27,7 @@
     "FolderType": "POST-IMPORT",
     "FolderDescription": "Where the original video files that have finished converting go",
     "FolderFilter": "",
-    "FolderPath": "C:\\Users\\user\\Videos\\ffmpeg-ToConvert\\Originals\\",
+    "FolderPath": "C:\\Users\\user\\Videos\\ffmpeg-ToConvert\\Originals",
     "FolderIncludeSub": "false",
     "ExecutableFile": "",
     "ExecutableArguments": ""
