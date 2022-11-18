@@ -13,6 +13,9 @@ public class FfmpegCoreService
 
     private SemaphoreSlim sem;
     
+    //At what percent to report progress in the logs
+    private const int ReportPercentCompletion = 10;
+    
     public FfmpegCoreService()
     {
         sem = new SemaphoreSlim(1, 1);
@@ -71,11 +74,27 @@ public class FfmpegCoreService
             logger.Info($"Converting File: {inputFile}");
             logger.Info($"Output File: {outputPath + outputFileName}");
 
-            return FFMpegArguments.FromFileInput(inputFile)
+            var percentTracker = 0;
+
+            void ProgressHandler(double p)
+            {
+                //Only log when the percent exceeds the reportPercentCompletion
+                if (percentTracker < p / ReportPercentCompletion)
+                {
+                    logger.Info("Current Video Progress: " + p + "%");
+                    percentTracker = (int)Math.Ceiling(p / ReportPercentCompletion);
+                }
+            }
+
+            var videoDuration = FFProbe.Analyse(inputFile).Duration;
+            
+            return FFMpegArguments
+                .FromFileInput(inputFile)
                 .OutputToFile(outputPath + outputFileName, false, options => options
                     .WithVideoCodec(VideoCodec.LibX265)
                     .WithConstantRateFactor(24)
                     .WithFastStart())
+                .NotifyOnProgress(ProgressHandler, videoDuration)
                 .ProcessAsynchronously();
         }
         catch (Exception ex)
@@ -131,6 +150,7 @@ public class FfmpegCoreService
         var inputFileSize = fiInput.Length >> 20;
         var outputFileSize = fiOutput.Length >> 20;
         var savingsPercent = ((double)inputFileSize - outputFileSize) / inputFileSize * 100;
+        logger.Info("Stats for file: " + fiOutput.Name);
         logger.Info("Input File Size: " + inputFileSize + " MB");
         logger.Info("Output File Save: " + outputFileSize + " MB");
         logger.Info("Total conversion savings: " + Math.Floor(savingsPercent) + "%");

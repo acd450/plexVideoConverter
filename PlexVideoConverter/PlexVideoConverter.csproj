@@ -5,11 +5,10 @@
         <Nullable>enable</Nullable>
         <ImplicitUsings>enable</ImplicitUsings>
         <UserSecretsId>dotnet-PlexVideoConverter-C9E16EC7-28DE-42D8-9AD2-0AF0411D9D83</UserSecretsId>
-        <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
     </PropertyGroup>
 
     <ItemGroup>
-        <PackageReference Include="FFMpegCore" Version="4.8.0" />
+        <PackageReference Include="FFMpegCore" Version="4.7.0" />
         <PackageReference Include="Microsoft.Extensions.Hosting" Version="6.0.1" />
         <PackageReference Include="Microsoft.Extensions.Hosting.WindowsServices" Version="6.0.0" />
         <PackageReference Include="Newtonsoft.Json" Version="13.0.1" />

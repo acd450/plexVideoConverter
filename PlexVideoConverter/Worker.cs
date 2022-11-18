@@ -1,15 +1,10 @@
 using NLog;
-using NLog.Fluent;
 
 namespace PlexVideoConverter;
 
 public class Worker : BackgroundService
 {
-    private readonly FileListenerService _fileListenerService;
-    private readonly FfmpegCoreService _ffmpegCoreService;
-    
     private static Logger logger = LogManager.GetCurrentClassLogger();
-
 
     public Worker(FileListenerService fileListenerService,
         FfmpegCoreService ffmpegCoreService)
