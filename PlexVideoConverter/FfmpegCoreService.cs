@@ -12,10 +12,7 @@ public class FfmpegCoreService
     private static Logger logger = LogManager.GetCurrentClassLogger();
 
     private SemaphoreSlim sem;
-    
-    //At what percent to report progress in the logs
-    private const int ReportPercentCompletion = 10;
-    
+
     public FfmpegCoreService()
     {
         sem = new SemaphoreSlim(1, 1);
@@ -24,7 +21,7 @@ public class FfmpegCoreService
     /// <summary>
     /// Test function to see if FFMPEG was working
     /// </summary>
-    public static void ConvertVideo()
+    public static void TestConvertVideo()
     {
         var inputName = "C:\\Users\\user\\Videos\\ffmpeg-ToConvert\\Keystone Instagram.mp4";
         var outputName = "C:\\Users\\user\\Videos\\ffmpeg-ToConvert\\Keystone Instagram-sm.mkv";
@@ -79,20 +76,22 @@ public class FfmpegCoreService
             void ProgressHandler(double p)
             {
                 //Only log when the percent exceeds the reportPercentCompletion
-                if (percentTracker < p / ReportPercentCompletion)
+                if (percentTracker < p / Startup.FfmpegSettings.reportPercentProgress)
                 {
                     logger.Info("Current Video Progress: " + p + "%");
-                    percentTracker = (int)Math.Ceiling(p / ReportPercentCompletion);
+                    percentTracker = (int)Math.Ceiling(p / Startup.FfmpegSettings.reportPercentProgress);
                 }
             }
 
             var videoDuration = FFProbe.Analyse(inputFile).Duration;
             
+            logger.Info($"Ffmpeg has crf={Startup.FfmpegSettings.videoQuality}");
+            
             return FFMpegArguments
                 .FromFileInput(inputFile)
                 .OutputToFile(outputPath + outputFileName, false, options => options
                     .WithVideoCodec(VideoCodec.LibX265)
-                    .WithConstantRateFactor(24)
+                    .WithConstantRateFactor(Startup.FfmpegSettings.videoQuality)
                     .WithFastStart())
                 .NotifyOnProgress(ProgressHandler, videoDuration)
                 .ProcessAsynchronously();

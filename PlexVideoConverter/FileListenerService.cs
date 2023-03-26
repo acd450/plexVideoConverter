@@ -47,13 +47,16 @@ public class FileListenerService
     public void StartFileSystemWatcher()
     {
         if (Instance.FileListenerSettings.Count is 0)
+        {
+            logger.Info("There are no file listener settings.  Missing fileListenerSettings.json");
             return;
+        }
         
         // Creates a new instance of the list
         Instance._listFileSystemWatcher = new List<FileSystemWatcher>();
         // Loop the list to process each of the folder specifications found
         var importSettings = GetImportSettings();
-        if (importSettings == null) return;
+        if (importSettings == null) throw new Exception("fileListenerSettings.json not found. Exiting.");
         foreach (FileListenerSettings setting in importSettings)
         {
             logger.Info($"Initializing File watcher for Type:" +
@@ -75,8 +78,7 @@ public class FileListenerService
                                           NotifyFilters.DirectoryName;
                 // Associate the event that will be triggered when a new file
                 // is added to the monitored folder, using a lambda expression                   
-                fileSWatch.Created += (senderObj, fileSysArgs) =>
-                    fileSWatch_Created(senderObj, fileSysArgs);
+                fileSWatch.Created += fileSWatch_Created;
                 // Begin watching
                 fileSWatch.EnableRaisingEvents = true;
                 // Add the systemWatcher to the list
@@ -111,6 +113,7 @@ public class FileListenerService
     /// <param name="action_Args">arguments to be passed to the executable (action)</param>
     private async void fileSWatch_Created(object sender, FileSystemEventArgs e)
     {
+        logger.Debug($"fileSWatch_Created() with file: {e.FullPath}");
         var fileName = e.FullPath;
 
         //Lets wait till the file is fully transferred before we do anything

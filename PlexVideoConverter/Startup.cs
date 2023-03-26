@@ -3,11 +3,13 @@ using NLog.Extensions.Logging;
 
 namespace PlexVideoConverter
 {
-    public static class Program
+    public class Startup
     {
+        public static IConfigurationRoot Config { get; set; }
+        public static FfmpegSettings FfmpegSettings { get; private set; }
         public static async Task Main(string[] args)
         {
-            var config = new ConfigurationBuilder()
+            Config = new ConfigurationBuilder()
                 .SetBasePath(Directory.GetCurrentDirectory())
                 .AddJsonFile("appsettings.json", optional: true, reloadOnChange: true)
                 .Build();
@@ -36,7 +38,7 @@ namespace PlexVideoConverter
                 .ConfigureAppConfiguration(builder =>
                 {
                     builder.Sources.Clear();
-                    builder.AddConfiguration(config);
+                    builder.AddConfiguration(Config);
                 })
                 .ConfigureLogging((context, logging) =>
                 {
@@ -44,9 +46,11 @@ namespace PlexVideoConverter
                     Directory.CreateDirectory(@"C:\\ProgramData\\PlexVideoConverter\\Logs\\");
 
                     logging.ClearProviders();
-                    logging.AddNLog(new NLogLoggingConfiguration(config.GetSection("NLog")));
+                    logging.AddNLog(new NLogLoggingConfiguration(Config.GetSection("NLog")));
                 })
                 .Build();
+
+            FfmpegSettings = Config.GetSection("FfmpegSettings").Get<FfmpegSettings>();
 
             await host.RunAsync();
         }

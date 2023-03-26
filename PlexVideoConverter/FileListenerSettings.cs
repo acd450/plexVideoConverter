@@ -8,7 +8,7 @@ public class FileListenerSettings
     /// <summary>If TRUE: the file type and folder will be monitored</summary>
     public bool FolderEnabled { get; set; }
     /// <summary>
-    /// Type of folder, EXPORT or IMPORT
+    /// Type of folder: EXPORT, IMPORT, POST-IMPORT
     /// </summary>
     public string FolderType { get; set; }
     /// <summary>Description of the type of files and folder location –

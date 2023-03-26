@@ -26,6 +26,6 @@ public class Worker : BackgroundService
             logger.Error(ex, "{Message}", ex.Message);
             Environment.Exit(1);
         }
-        
+        logger.Info("ExecuteAsyn() complete, process finished.");
     }
 }
