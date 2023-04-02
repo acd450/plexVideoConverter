@@ -1,8 +1,5 @@
-﻿using System.Reflection;
-using System.Runtime.InteropServices;
-using Newtonsoft.Json;
+﻿using System.Runtime.InteropServices;
 using NLog;
-using NLog.Fluent;
 
 namespace PlexVideoConverter;
 
@@ -13,8 +10,6 @@ public class FileListenerService
     private static FileListenerService _instance;
     public static FileListenerService Instance => _instance == null ? new FileListenerService() : _instance;
 
-    private List<FileListenerSettings> FileListenerSettings = new();
-
     private List<FileSystemWatcher> _listFileSystemWatcher = new();
     
     const int ERROR_SHARING_VIOLATION = 32;
@@ -22,31 +17,12 @@ public class FileListenerService
 
     public FileListenerService()
     {
-        PopulateGlobalSettings();
-    }
-
-    private void PopulateGlobalSettings()
-    {
-        try
-        {
-            var globalSettingsPath = Assembly.GetExecutingAssembly().Location;
-            using (StreamReader r = new StreamReader(Path.GetDirectoryName(globalSettingsPath) + "\\fileListenerSettings.json"))
-            {
-                string json = r.ReadToEnd();
-                var fileListenerSettings = JsonConvert.DeserializeObject<List<FileListenerSettings>>(json);
-                if (fileListenerSettings != null)
-                    FileListenerSettings = fileListenerSettings;
-            }
-        }
-        catch (Exception ex)
-        {
-            Console.WriteLine("Error in GlobalSettingsService. " + ex.Message);
-        }
+        SettingsService.Instance.PopulateGlobalSettings();
     }
 
     public void StartFileSystemWatcher()
     {
-        if (Instance.FileListenerSettings.Count is 0)
+        if (SettingsService.Instance.FileListenerSettings.Count is 0)
         {
             logger.Info("There are no file listener settings.  Missing fileListenerSettings.json");
             return;
@@ -55,7 +31,7 @@ public class FileListenerService
         // Creates a new instance of the list
         Instance._listFileSystemWatcher = new List<FileSystemWatcher>();
         // Loop the list to process each of the folder specifications found
-        var importSettings = GetImportSettings();
+        var importSettings = SettingsService.Instance.GetImportSettings();
         if (importSettings == null) throw new Exception("fileListenerSettings.json not found. Exiting.");
         foreach (FileListenerSettings setting in importSettings)
         {
@@ -75,7 +51,7 @@ public class FileListenerService
                 fileSWatch.Path = setting.FolderPath;
                 // Subscribe to notify filters
                 fileSWatch.NotifyFilter = NotifyFilters.LastWrite | NotifyFilters.FileName |
-                                          NotifyFilters.DirectoryName;
+                                          NotifyFilters.DirectoryName | NotifyFilters.CreationTime;
                 // Associate the event that will be triggered when a new file
                 // is added to the monitored folder, using a lambda expression                   
                 fileSWatch.Created += fileSWatch_Created;
@@ -90,28 +66,12 @@ public class FileListenerService
         }
     }
 
-    public List<FileListenerSettings> GetImportSettings()
-    {
-        return Instance.FileListenerSettings.FindAll(setting => setting.FolderType == "IMPORT");
-    }
-
-    public FileListenerSettings? GetPostImportSettings()
-    {
-        return Instance.FileListenerSettings.FirstOrDefault(setting => setting.FolderType == "POST-IMPORT");
-    }
-
-    public List<FileListenerSettings> GetExportSettings()
-    {
-        return Instance.FileListenerSettings.FindAll(setting => setting.FolderType == "EXPORT");
-    }
-    
     /// <summary>This event is triggered when a file with the specified
-    /// extension is created on the monitored folder</summary>
+    /// extension is created on the monitored folder.  Important, this
+    /// method must be low cost, otherwise it kills the file watch.</summary>
     /// <param name="sender">Object raising the event</param>
     /// <param name="e">List of arguments - FileSystemEventArgs</param>
-    /// <param name="action_Exec">The action to be executed upon detecting a change in the File system</param>
-    /// <param name="action_Args">arguments to be passed to the executable (action)</param>
-    private async void fileSWatch_Created(object sender, FileSystemEventArgs e)
+    private void fileSWatch_Created(object sender, FileSystemEventArgs e)
     {
         logger.Debug($"fileSWatch_Created() with file: {e.FullPath}");
         var fileName = e.FullPath;
@@ -123,8 +83,8 @@ public class FileListenerService
             Thread.Sleep(2000);
         }
         
-        await FfmpegCoreService.Instance.Enqueue(() => FfmpegCoreService.Instance.ConvertVideoAsync(fileName));
-        FfmpegCoreService.Instance.CompleteFileConversion(fileName);
+        Task.Run(() => FfmpegCoreService.Instance.AddItems(fileName));
+        logger.Debug($"{fileName} has been queued.");
     }
     
     /// <summary>

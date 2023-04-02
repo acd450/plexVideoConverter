@@ -22,6 +22,17 @@
     "ExecutableArguments": ""
   },
   {
+    "FolderID": "VideoInputAviFile",
+    "FolderEnabled": "true",
+    "FolderType": "IMPORT",
+    "FolderDescription": "Input Video Files that will be monitored",
+    "FolderFilter": "*.avi",
+    "FolderPath": "C:\\Users\\user\\Videos\\ffmpeg-ToConvert\\",
+    "FolderIncludeSub": "false",
+    "ExecutableFile": "",
+    "ExecutableArguments": ""
+  },
+  {
     "FolderID": "PostConvertOriginalFiles",
     "FolderEnabled": "true",
     "FolderType": "POST-IMPORT",

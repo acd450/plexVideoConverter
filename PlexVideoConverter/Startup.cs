@@ -7,6 +7,7 @@ namespace PlexVideoConverter
     {
         public static IConfigurationRoot Config { get; set; }
         public static FfmpegSettings FfmpegSettings { get; private set; }
+        public const string FfmpegSettingsLocation = "C:\\ProgramData\\PlexVideoConverter";
         public static async Task Main(string[] args)
         {
             Config = new ConfigurationBuilder()

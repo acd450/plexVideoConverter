@@ -40,6 +40,13 @@ public class FfmpegCoreService
             Console.WriteLine(ex.Message);
         }
     }
+
+    public async void AddItems(string fileName)
+    {
+        await Instance.Enqueue(() => Instance.ConvertVideoAsync(fileName));
+        
+        Instance.CompleteFileConversion(fileName);
+    }
     
     public async Task Enqueue(Func<Task> taskGenerator)
     {
@@ -55,13 +62,13 @@ public class FfmpegCoreService
             sem.Release();
         }
     }
-    
-    public Task ConvertVideoAsync(string inputFile)
+
+    private Task ConvertVideoAsync(string inputFile)
     {
         try
         {
             var outputPath =
-                FileListenerService.Instance.GetExportSettings().FirstOrDefault()?
+                SettingsService.Instance.GetExportSettings().FirstOrDefault()?
                     .FolderPath;
 
             var outputFileName = inputFile.Substring(inputFile.LastIndexOf("\\", StringComparison.Ordinal),
@@ -84,9 +91,9 @@ public class FfmpegCoreService
             }
 
             var videoDuration = FFProbe.Analyse(inputFile).Duration;
-            
+
             logger.Info($"Ffmpeg has crf={Startup.FfmpegSettings.videoQuality}");
-            
+
             return FFMpegArguments
                 .FromFileInput(inputFile)
                 .OutputToFile(outputPath + outputFileName, false, options => options
@@ -113,7 +120,7 @@ public class FfmpegCoreService
             inputFilePath.Length - inputFilePath.LastIndexOf("\\", StringComparison.Ordinal));
         
         var completedPath =
-            FileListenerService.Instance.GetPostImportSettings()?
+            SettingsService.Instance.GetPostImportSettings()?
                 .FolderPath;
         
         CalculateConversionStats(inputFilePath);
@@ -126,7 +133,7 @@ public class FfmpegCoreService
     private void CalculateConversionStats(string inputFilePath)
     {
         var outputPath =
-            FileListenerService.Instance.GetExportSettings().FirstOrDefault()?
+            SettingsService.Instance.GetExportSettings().FirstOrDefault()?
                 .FolderPath;
 
         var outputFileName = inputFilePath.Substring(inputFilePath.LastIndexOf("\\", StringComparison.Ordinal),
